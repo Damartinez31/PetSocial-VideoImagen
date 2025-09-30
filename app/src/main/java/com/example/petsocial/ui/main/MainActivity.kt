@@ -12,10 +12,11 @@ import androidx.core.view.GravityCompat
 import androidx.core.view.doOnLayout
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import com.example.petsocial.ui.Fotos.GaleriaImagen
 import com.example.petsocial.ui.profile.ProfileFragment
 import com.google.android.material.appbar.MaterialToolbar
 import java.io.InputStream
-import com.example.petsocial.ui.videoimagen.WebVideoImagen
+import com.example.petsocial.ui.video.WebVideo
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,8 +46,8 @@ class MainActivity : AppCompatActivity() {
 
     private val items = listOf(
         MenuItemM("Perfil", "icons/perfil.png", "👤") { ProfileFragment()  },
-        MenuItemM("Fotos",  "icons/fotos.png",  "🖼️") { Placeholder("Fotos (placeholder)") },
-        MenuItemM("Videos", "icons/videos.png", "▶️") { WebVideoImagen() },
+        MenuItemM("Fotos",  "icons/fotos.png",  "🖼️") { GaleriaImagen() },
+        MenuItemM("Videos", "icons/videos.png", "▶️") { WebVideo() },
         MenuItemM("Web",    "icons/web.png",    "🌐") { Placeholder("Web (placeholder)") },
         MenuItemM("Subir",  "icons/subir.png",  "⬆️") { Placeholder("Subir (placeholder)") }
     )

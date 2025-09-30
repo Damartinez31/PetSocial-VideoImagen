@@ -1,4 +1,4 @@
-package com.example.petsocial.ui.videoimagen
+package com.example.petsocial.ui.video
 
 import android.graphics.Color
 import android.media.MediaPlayer
@@ -15,7 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 
-class WebVideoImagen : Fragment() {
+class WebVideo : Fragment() {
 
     // ---------- Views ----------
     private lateinit var surfaceView: SurfaceView
@@ -28,14 +28,10 @@ class WebVideoImagen : Fragment() {
     private lateinit var tvCurrentTime: TextView
     private lateinit var tvTotalTime: TextView
     private lateinit var videoContainer: LinearLayout
-    private lateinit var galleryGrid: GridLayout
-    private lateinit var btnAddImage: Button
     private lateinit var tvVideoStatus: TextView
-    private var imageViewerOverlay: FrameLayout? = null
 
     // ---------- Estado ----------
     private var currentVideoUri: Uri? = null
-    private val imageUris = mutableListOf<Uri>()
     private var isPlaying = false
     private var mediaPlayer: MediaPlayer? = null
     private var surfaceHolder: SurfaceHolder? = null
@@ -50,7 +46,7 @@ class WebVideoImagen : Fragment() {
     private val FIELD_BG = Color.parseColor("#F2F2F6")
     private val BG_WHITE = Color.parseColor("#FFFFFF")
 
-    // Selectores de archivos
+    // Selector de video
     private val pickVideo = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         uri?.let {
             try {
@@ -59,17 +55,6 @@ class WebVideoImagen : Fragment() {
                 )
             } catch (_: SecurityException) { }
             loadVideo(it)
-        }
-    }
-
-    private val pickImage = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        uri?.let {
-            try {
-                requireContext().contentResolver.takePersistableUriPermission(
-                    it, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: SecurityException) { }
-            addImageToGallery(it)
         }
     }
 
@@ -89,8 +74,8 @@ class WebVideoImagen : Fragment() {
 
         // Título
         content.addView(TextView(requireContext()).apply {
-            text = "Videos e Imágenes"
-            textSize = 22f
+            text = "Reproductor de Video"
+            textSize = 15f
             setTextColor(LABEL_COLOR)
             setPadding(0, 0, 0, dp(16))
         })
@@ -259,26 +244,6 @@ class WebVideoImagen : Fragment() {
         }
         extraControlsContainer.addView(btnStop)
 
-        // ========== SECCIÓN DE GALERÍA ==========
-        content.addView(makeLabel("Galería de Imágenes"))
-
-        galleryGrid = GridLayout(requireContext()).apply {
-            columnCount = 3
-            rowCount = GridLayout.UNDEFINED
-            setPadding(dp(8))
-            setBackgroundColor(FIELD_BG)
-        }
-        content.addView(galleryGrid, matchWrap())
-
-        btnAddImage = Button(requireContext()).apply {
-            text = "➕ Agregar Imagen"
-            setOnClickListener { pickImage.launch(arrayOf("image/*")) }
-        }
-        content.addView(btnAddImage, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { topMargin = dp(12) })
-
         return scroll
     }
 
@@ -323,7 +288,7 @@ class WebVideoImagen : Fragment() {
                 }
 
                 setOnCompletionListener {
-                    this@WebVideoImagen.isPlaying = false
+                    this@WebVideo.isPlaying = false
                     btnPlayPause.text = "▶ Play"
                     tvVideoStatus.text = "Video finalizado"
                     seekTo(0)
@@ -500,241 +465,6 @@ class WebVideoImagen : Fragment() {
         btnForward.isEnabled = false
     }
 
-    // ---------- Gallery Functions ----------
-    private fun addImageToGallery(uri: Uri) {
-        imageUris.add(uri)
-        refreshGallery()
-        Toast.makeText(requireContext(), "Imagen agregada", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun refreshGallery() {
-        galleryGrid.removeAllViews()
-
-        imageUris.forEachIndexed { index, uri ->
-            val container = FrameLayout(requireContext()).apply {
-                layoutParams = GridLayout.LayoutParams().apply {
-                    width = 0
-                    height = dp(120)
-                    columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                    setMargins(dp(6), dp(6), dp(6), dp(6))
-                }
-                setBackgroundColor(Color.WHITE)
-                elevation = dp(2).toFloat()
-            }
-
-            val imageView = ImageView(requireContext()).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                ).apply {
-                    setMargins(dp(2), dp(2), dp(2), dp(2))
-                }
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setImageURI(uri)
-                clipToOutline = true
-                setOnClickListener {
-                    showImageViewer(uri, index)
-                }
-            }
-            container.addView(imageView)
-
-            val overlay = View(requireContext()).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    dp(36)
-                ).apply {
-                    gravity = Gravity.TOP
-                }
-                setBackgroundColor(Color.parseColor("#AA000000"))
-            }
-            container.addView(overlay)
-
-            val btnDelete = Button(requireContext()).apply {
-                text = "✕"
-                textSize = 16f
-                layoutParams = FrameLayout.LayoutParams(
-                    dp(36),
-                    dp(36)
-                ).apply {
-                    gravity = Gravity.TOP or Gravity.END
-                }
-                setBackgroundColor(Color.TRANSPARENT)
-                setTextColor(Color.WHITE)
-                setPadding(0)
-                setOnClickListener {
-                    removeImage(index)
-                }
-            }
-            container.addView(btnDelete)
-
-            val tvNumber = TextView(requireContext()).apply {
-                text = "${index + 1}"
-                textSize = 11f
-                setTextColor(Color.WHITE)
-                setPadding(dp(6), dp(3), dp(6), dp(3))
-                setBackgroundColor(Color.parseColor("#CC000000"))
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.WRAP_CONTENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    gravity = Gravity.BOTTOM or Gravity.START
-                    setMargins(dp(4), dp(4), dp(4), dp(4))
-                }
-            }
-            container.addView(tvNumber)
-
-            galleryGrid.addView(container)
-        }
-
-        if (imageUris.isEmpty()) {
-            val emptyContainer = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                setPadding(dp(24))
-                layoutParams = GridLayout.LayoutParams().apply {
-                    width = GridLayout.LayoutParams.MATCH_PARENT
-                    columnSpec = GridLayout.spec(0, 3)
-                }
-            }
-
-            emptyContainer.addView(TextView(requireContext()).apply {
-                text = "🖼️"
-                textSize = 48f
-                gravity = Gravity.CENTER
-            })
-
-            emptyContainer.addView(TextView(requireContext()).apply {
-                text = "No hay imágenes en la galería"
-                textSize = 14f
-                setTextColor(HINT_COLOR)
-                gravity = Gravity.CENTER
-                setPadding(0, dp(8), 0, 0)
-            })
-
-            emptyContainer.addView(TextView(requireContext()).apply {
-                text = "Toca el botón de abajo para agregar"
-                textSize = 12f
-                setTextColor(HINT_COLOR)
-                gravity = Gravity.CENTER
-                setPadding(0, dp(4), 0, 0)
-            })
-
-            galleryGrid.addView(emptyContainer)
-        }
-    }
-
-    private fun removeImage(index: Int) {
-        if (index in imageUris.indices) {
-            imageUris.removeAt(index)
-            refreshGallery()
-            Toast.makeText(requireContext(), "Imagen eliminada", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun showImageViewer(uri: Uri, index: Int) {
-        imageViewerOverlay = FrameLayout(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            setBackgroundColor(Color.parseColor("#F0000000"))
-            elevation = 100f
-            isClickable = true
-            isFocusable = true
-            setOnClickListener {
-                closeImageViewer()
-            }
-        }
-
-        val contentContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            isClickable = false
-            isFocusable = false
-        }
-
-        val topBar = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            setBackgroundColor(Color.parseColor("#DD000000"))
-            isClickable = true
-        }
-
-        topBar.addView(TextView(requireContext()).apply {
-            text = "Imagen ${index + 1} de ${imageUris.size}"
-            textSize = 16f
-            setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        })
-
-        topBar.addView(Button(requireContext()).apply {
-            text = "← Volver"
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.parseColor("#44FFFFFF"))
-            setPadding(dp(16), dp(8), dp(16), dp(8))
-            setOnClickListener { closeImageViewer() }
-        })
-
-        contentContainer.addView(topBar)
-
-        contentContainer.addView(Space(requireContext()), LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
-
-        contentContainer.addView(ImageView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(dp(24), dp(16), dp(24), dp(16))
-            }
-            adjustViewBounds = true
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            setImageURI(uri)
-            isClickable = true
-            setOnClickListener { closeImageViewer() }
-        })
-
-        contentContainer.addView(Space(requireContext()), LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
-
-        val bottomBar = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-            setBackgroundColor(Color.parseColor("#DD000000"))
-            isClickable = true
-        }
-
-        bottomBar.addView(Button(requireContext()).apply {
-            text = "🗑️ Eliminar"
-            setTextColor(Color.parseColor("#FF5252"))
-            setBackgroundColor(Color.parseColor("#44FFFFFF"))
-            setPadding(dp(16), dp(8), dp(16), dp(8))
-            setOnClickListener {
-                removeImage(index)
-                closeImageViewer()
-            }
-        })
-
-        contentContainer.addView(bottomBar)
-        imageViewerOverlay?.addView(contentContainer)
-        (requireActivity().window.decorView as ViewGroup).addView(imageViewerOverlay)
-    }
-
-    private fun closeImageViewer() {
-        imageViewerOverlay?.let { overlay ->
-            (requireActivity().window.decorView as ViewGroup).removeView(overlay)
-        }
-        imageViewerOverlay = null
-    }
-
     // ---------- Helpers UI ----------
     private fun makeLabel(text: String) = TextView(requireContext()).apply {
         this.text = text
@@ -763,6 +493,5 @@ class WebVideoImagen : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         releaseMediaPlayer()
-        closeImageViewer()
     }
 }
